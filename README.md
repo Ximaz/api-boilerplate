@@ -12,3 +12,7 @@ This project uses the following stack :
 - Database : `PostgreSQL`,
 - Authentication : `JSON Web Token`,
 - Password Hashing : `Argon2id` [according to OWASP security advice](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id),
+
+# Communications
+
+All communitcation will be in a JSON format.
