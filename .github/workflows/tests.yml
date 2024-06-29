@@ -15,4 +15,4 @@ jobs:
                     fetch-depth: 0
 
             -   name: "Execute JEST"
-                run: "npm run tests"
+                run: "npm i -D && npm run test"
