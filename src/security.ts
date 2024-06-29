@@ -20,7 +20,7 @@ const JWT_ALGORITHM = "HS512";
  * decrypt JWT. Returns public and private key in an RSA PEM format.
  * @returns [[publicKeyPEM, privateKeyPEM]?, error?]
  */
-async function exportJoseKeyPair(): Promise<
+export async function exportJoseKeyPair(): Promise<
     [[string | null, string | null], null | unknown]
 > {
     let keys: GenerateKeyPairResult<KeyLike>;
@@ -72,7 +72,7 @@ async function exportJoseKeyPair(): Promise<
  * @param josePrivateKeyPEM the RSA private key used to dencrypt JWT in PEM format.
  * @returns [[publicKey, privateKey]?, error?]
  */
-async function importJoseKeyPair(
+export async function importJoseKeyPair(
     josePublicKeyPEM: string,
     josePrivateKeyPEM: string
 ): Promise<
@@ -122,7 +122,7 @@ interface ForgeJWEOptions {
  * @param josePublicKey the JOSE public key used to encrypt the signed JWT.
  * @param options the JWT issuer, the possible audience, and the expiration timespan.
  */
-async function forgeJWE(
+export async function forgeJWE(
     payload: object,
     jwtSecretKey: string,
     josePublicKey: KeyLike | Uint8Array,
@@ -178,7 +178,7 @@ interface verifyJWEOptions {
  * @param issuer the issuer of the JWT, most of the time it's the project name.
  * @param checkExpiration whether or not to check for token expiration.
  */
-async function verifyJWE(
+export async function verifyJWE(
     jwe: string,
     jwtSecretKey: string,
     josePrivateKey: KeyLike | Uint8Array,
@@ -221,5 +221,3 @@ async function verifyJWE(
         return [null, e];
     }
 }
-
-export { exportJoseKeyPair, importJoseKeyPair, forgeJWE, verifyJWE };
