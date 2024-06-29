@@ -6,7 +6,7 @@
     "type": "module",
     "scripts": {
         "build": "tsc",
-        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --collect-coverage",
+        "test": "npm run build && node --experimental-vm-modules node_modules/jest/bin/jest.js --collect-coverage",
         "start": "node .",
         "dev": "tsc -p tsconfig.json --watch",
         "nodemon": "nodemon ."
