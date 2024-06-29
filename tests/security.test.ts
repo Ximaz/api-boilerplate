@@ -38,6 +38,50 @@ test("Exportation and importation of JOSE public and private keys", async functi
     expect(josePrivateKey).not.toBeNull();
 });
 
+test("Invalid secret key length for JWE forge", async function () {
+    const [token, error] = await forgeJWE({}, "not32bytes", "public", {});
+    expect(token).toBeNull();
+    expect(error).not.toBeNull();
+    expect(error.toString()).toBe(
+        "Error: The JWT secret key must be 32 bytes."
+    );
+});
+
+test("Importation of invalid JOSE public and / or private keys", async function () {
+    /* Error handling */
+    const [[josePublicKeyPEM, josePrivateKeyPEM], exportJoseKeyPairError] =
+        await exportJoseKeyPair();
+    expect(exportJoseKeyPairError).toBeNull();
+
+    const [invalidPublicKeyKeys, importJoseKeyPairInvalidPublicKeyError] =
+        await importJoseKeyPair("invalidPublicKey", josePrivateKeyPEM);
+    expect(invalidPublicKeyKeys).toStrictEqual([null, null]);
+    expect(importJoseKeyPairInvalidPublicKeyError).not.toBeNull();
+
+    const [invalidPrivateKeyKeys, importJoseKeyPairInvalidPrivateKeyError] =
+        await importJoseKeyPair(josePublicKeyPEM, "invalidPrivateKey");
+    expect(invalidPrivateKeyKeys).toStrictEqual([null, null]);
+    expect(importJoseKeyPairInvalidPrivateKeyError).not.toBeNull();
+});
+
+test("Verification of JWE using invalid JOSE private key and / or secret", async function () {
+    /* Error handling */
+    const [[josePublicKeyPEM, josePrivateKeyPEM]] = await exportJoseKeyPair();
+    const [[josePublicKey, josePrivateKey]] = await importJoseKeyPair(
+        josePublicKeyPEM,
+        josePrivateKeyPEM
+    );
+
+    const [token] = await forgeJWE({}, JWT_SECRET_KEY, josePublicKey, {});
+    const [_, invalidSecretError] = await verifyJWE(token, "invalidSecret", josePrivateKey, {});
+    expect(_).toBeNull();
+    expect(invalidSecretError).not.toBeNull();
+
+    const [__, invalidPrivateKey] = await verifyJWE(token, JWT_SECRET_KEY, "invalidPrivateKey", {});
+    expect(__).toBeNull();
+    expect(invalidPrivateKey).not.toBeNull();
+});
+
 test("Forging and verifying JWE", async function () {
     const [[josePublicKeyPEM, josePrivateKeyPEM]] = await exportJoseKeyPair();
     const [[josePublicKey, josePrivateKey]] = await importJoseKeyPair(
@@ -102,6 +146,7 @@ test("Deal with expired JWE verification", async function () {
             checkExpiration: true,
         }
     );
+    expect(verifyJWEError).not.toBeNull();
     expect(verifyJWEError.toString()).toBe("TokenExpiredError: jwt expired");
     expect(nullPayload).toBeNull();
 });
