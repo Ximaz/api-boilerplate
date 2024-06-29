@@ -10,7 +10,7 @@ This project uses the following stack :
 - Backend Language : `TypeScript`,
 - Backend Library : `ExpressJS`,
 - Database : `PostgreSQL`,
-- Authentication : `JSON Web Token`,
+- Authentication : `jsonwebtoken` for JWT authentication and `jose` for JWT encryption & decryption,
 - Password Hashing : `Argon2id` [according to OWASP security advice](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id),
 
 # Communications
