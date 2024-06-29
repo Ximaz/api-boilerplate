@@ -20,7 +20,7 @@ const JWT_ALGORITHM = "HS512";
  * decrypt JWT. Returns public and private key in an RSA PEM format.
  * @returns [[publicKeyPEM, privateKeyPEM]?, error?]
  */
-export async function exportJoseKeyPair(): Promise<
+async function exportJoseKeyPair(): Promise<
     [[string | null, string | null], null | unknown]
 > {
     let keys: GenerateKeyPairResult<KeyLike>;
@@ -72,7 +72,7 @@ export async function exportJoseKeyPair(): Promise<
  * @param josePrivateKeyPEM the RSA private key used to dencrypt JWT in PEM format.
  * @returns [[publicKey, privateKey]?, error?]
  */
-export async function importJoseKeyPair(
+async function importJoseKeyPair(
     josePublicKeyPEM: string,
     josePrivateKeyPEM: string
 ): Promise<
@@ -110,10 +110,10 @@ export async function importJoseKeyPair(
 }
 
 interface ForgeJWEOptions {
-    issuer: string,
-    audience?: string,
-    expiresIn?: string | number
-};
+    issuer: string;
+    audience?: string;
+    expiresIn?: string | number;
+}
 
 /**
  * @brief Signs and encrypts a JWT into a JWE.
@@ -122,7 +122,7 @@ interface ForgeJWEOptions {
  * @param josePublicKey the JOSE public key used to encrypt the signed JWT.
  * @param options the JWT issuer, the possible audience, and the expiration timespan.
  */
-export async function forgeJWE(
+async function forgeJWE(
     payload: object,
     jwtSecretKey: string,
     josePublicKey: KeyLike | Uint8Array,
@@ -140,7 +140,7 @@ export async function forgeJWE(
             allowInsecureKeySizes: false,
             allowInvalidAsymmetricKeyTypes: false,
             encoding: "utf-8",
-            ...options
+            ...options,
         });
     } catch (e) {
         return [null, e];
@@ -166,9 +166,9 @@ export async function forgeJWE(
 }
 
 interface verifyJWEOptions {
-    issuer: string,
-    checkExpiration?: boolean
-};
+    issuer: string;
+    checkExpiration?: boolean;
+}
 
 /**
  * @brief Decrypts and verify a JWE.
@@ -178,12 +178,12 @@ interface verifyJWEOptions {
  * @param issuer the issuer of the JWT, most of the time it's the project name.
  * @param checkExpiration whether or not to check for token expiration.
  */
-export async function verifyJWE(
+async function verifyJWE(
     jwe: string,
     jwtSecretKey: string,
     josePrivateKey: KeyLike | Uint8Array,
     options: verifyJWEOptions
-): Promise<[null | JWT.Jwt, null | unknown]> {
+): Promise<[null | JWT.JwtPayload, null | unknown]> {
     /* Decrypt the JWE */
     let encodedSignedJWT: Uint8Array;
     try {
@@ -214,10 +214,12 @@ export async function verifyJWE(
                 issuer: options.issuer,
                 algorithms: [JWT_ALGORITHM],
                 ignoreExpiration: false === options.checkExpiration,
-            }),
+            }).payload as JWT.JwtPayload,
             null,
         ];
     } catch (e) {
         return [null, e];
     }
 }
+
+export { exportJoseKeyPair, importJoseKeyPair, forgeJWE, verifyJWE };
