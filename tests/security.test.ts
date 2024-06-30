@@ -5,9 +5,6 @@ import {
     verifyJWE,
 } from "../dist/src/security.js";
 
-import { generateKeyPair, exportJWK } from "jose";
-import { jwk2pem, pem2jwk } from "pem-jwk";
-
 const JWT_SECRET_KEY = "2dd084b1270ce3add8c6864022f0ff4d";
 const issuer = "ApiBoilerplate";
 const audience = "ApiBoilerplateAudience";
