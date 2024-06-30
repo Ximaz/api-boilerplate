@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import { verifyJWE, SecurityContext } from "../security.js";
 import { Request, Response, NextFunction } from "express";
 import { JwtPayload } from "jsonwebtoken";
@@ -36,7 +37,7 @@ export default function (securityContext: SecurityContext) {
         );
         if (null !== error)
             return res.status(500).json({ error: (error as Error).toString() });
-        if (null === payload) throw new Error("Unreachable");
+        assert(null !== payload, "authMiddleware: 'payload' must not be 'null'.");
         Object.assign(req, { jwt: payload });
         return next();
     };
