@@ -3,6 +3,8 @@ import {
     importJoseKeyPair,
     forgeJWE,
     verifyJWE,
+    getHashPasswordFunction,
+    securityContext,
 } from "../build/security.js";
 
 const JWT_SECRET_KEY = "2dd084b1270ce3add8c6864022f0ff4d";
@@ -181,4 +183,32 @@ test("Invalid payload to sign", async function () {
     expect(jwe).toBeNull();
     expect(forgeJWEError).not.toBeNull();
     expect(forgeJWEError.toString()).toBe("Error: payload is required");
+});
+
+test("Password hashing using Argon2id", async function() {
+    const [hashPassword, error] = await getHashPasswordFunction();
+    expect(error).toBeNull();
+    expect(hashPassword).not.toBeNull();
+    const password = "MySecretOPPassword";
+    const salt = "SomeRandomSalt";
+    const firstHash = hashPassword(password, salt);
+    const secondHash = hashPassword(password, salt);
+    const expected = "1eb7dbea019881eba2df392e30d242f8b38e3385e6e6ee61e2a6efadfe1e2fa1";
+    expect(firstHash).toStrictEqual(expected);
+    expect(secondHash).toStrictEqual(expected);
+});
+
+test("Security Context validation", async function() {
+    /* Error handling */
+    const [[josePublicKeyPEM, josePrivateKeyPEM], exportJoseKeyPairError] =
+        await exportJoseKeyPair();
+    expect(exportJoseKeyPairError).toBeNull();
+
+    const [_, e1] = await securityContext(JWT_SECRET_KEY, "invalidPublicKey", "invalidPrivateKey", issuer);
+    expect(_).toBeNull();
+    expect(e1).not.toBeNull();
+
+    const [security, __] = await securityContext(JWT_SECRET_KEY, josePublicKeyPEM, josePrivateKeyPEM, issuer);
+    expect(security).not.toBeNull();
+    expect(__).toBeNull();
 });

@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import assert from "node:assert";
+
 import JWT from "jsonwebtoken";
 import {
     CompactEncrypt,
@@ -10,10 +13,13 @@ import {
     JWK,
 } from "jose";
 import { RSA_JWK, jwk2pem, pem2jwk } from "pem-jwk";
+import setupWasm, { Argon2idParams } from "argon2id/lib/setup.js";
 
 const JOSE_ALG = "RSA-OAEP";
 const JOSE_ENC = "A256GCM";
 const JWT_ALGORITHM = "HS512";
+const SIMD_FILENAME = "node_modules/argon2id/dist/simd.wasm";
+const NON_SIMD_FILENAME = "node_modules/argon2id/dist/no-simd.wasm";
 
 /**
  * @brief Exports a public and a private key to respectively encrypt and
@@ -222,11 +228,55 @@ export async function verifyJWE(
     }
 }
 
+type HashPasswordFunction = (password: string, salt: string) => string;
+
 export interface SecurityContext {
     jwtSecretKey: string;
     josePublicKey: KeyLike | Uint8Array;
     josePrivateKey: KeyLike | Uint8Array;
     issuer: string;
+    hashPassword: HashPasswordFunction;
+}
+
+export async function getHashPasswordFunction(): Promise<
+    [null | HashPasswordFunction, null | unknown]
+> {
+    let argon2id: (params: Argon2idParams) => Uint8Array;
+    try {
+        argon2id = await setupWasm(
+            function (importObject) {
+                return WebAssembly.instantiate(
+                    fs.readFileSync(SIMD_FILENAME),
+                    importObject
+                );
+            },
+            function (importObject) {
+                return WebAssembly.instantiate(
+                    fs.readFileSync(NON_SIMD_FILENAME),
+                    importObject
+                );
+            }
+        );
+    } catch (e) {
+        return [null, e];
+    }
+    return [
+        function (password: string, salt: string): string {
+            const encodedPassword = new TextEncoder().encode(password);
+            const encodedSalt = new TextEncoder().encode(salt);
+            return Buffer.from(
+                argon2id({
+                    memorySize: 47104,
+                    passes: 1,
+                    parallelism: 1,
+                    password: encodedPassword,
+                    salt: encodedSalt,
+                    tagLength: 32,
+                })
+            ).toString("hex");
+        },
+        null,
+    ];
 }
 
 export async function securityContext(
@@ -238,14 +288,29 @@ export async function securityContext(
     const [[josePublicKey, josePrivateKey], importJoseKeyPairError] =
         await importJoseKeyPair(JOSE_PUBLIC_KEY, JOSE_PRIVATE_KEY);
     if (null !== importJoseKeyPairError) return [null, importJoseKeyPairError];
-    if (null === josePublicKey || null === josePrivateKey)
-        return [null, new Error("Unreachable")];
+    assert(
+        null !== josePublicKey,
+        "securityContext: 'josePublicKey' must not be 'null'."
+    );
+    assert(
+        null !== josePrivateKey,
+        "securityContext: 'josePrivateKey' must not be 'null'."
+    );
+    const [hashPassword, getHashPasswordFunctionError] =
+        await getHashPasswordFunction();
+    if (null !== getHashPasswordFunctionError)
+        return [null, getHashPasswordFunctionError];
+    assert(
+        null !== hashPassword,
+        "securityContext: 'hashPassword' must not be 'null'."
+    );
     return [
         {
             jwtSecretKey: JWT_SECRET_KEY,
             josePublicKey,
             josePrivateKey,
             issuer: ISSUER,
+            hashPassword,
         },
         null,
     ];
