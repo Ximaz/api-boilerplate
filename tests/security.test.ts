@@ -5,6 +5,9 @@ import {
     verifyJWE,
 } from "../dist/src/security.js";
 
+import { generateKeyPair, exportJWK } from "jose";
+import { jwk2pem, pem2jwk } from "pem-jwk";
+
 const JWT_SECRET_KEY = "2dd084b1270ce3add8c6864022f0ff4d";
 const issuer = "ApiBoilerplate";
 const audience = "ApiBoilerplateAudience";
@@ -38,7 +41,7 @@ test("Exportation and importation of JOSE public and private keys", async functi
     expect(josePrivateKey).not.toBeNull();
 });
 
-test("Invalid secret key length for JWE forge", async function () {
+test("Invalid secret key length for JWE forge.", async function () {
     const [token, error] = await forgeJWE({}, "not32bytes", "public", {});
     expect(token).toBeNull();
     expect(error).not.toBeNull();
@@ -73,11 +76,21 @@ test("Verification of JWE using invalid JOSE private key and / or secret", async
     );
 
     const [token] = await forgeJWE({}, JWT_SECRET_KEY, josePublicKey, {});
-    const [_, invalidSecretError] = await verifyJWE(token, "invalidSecret", josePrivateKey, {});
+    const [_, invalidSecretError] = await verifyJWE(
+        token,
+        "invalidSecret",
+        josePrivateKey,
+        {}
+    );
     expect(_).toBeNull();
     expect(invalidSecretError).not.toBeNull();
 
-    const [__, invalidPrivateKey] = await verifyJWE(token, JWT_SECRET_KEY, "invalidPrivateKey", {});
+    const [__, invalidPrivateKey] = await verifyJWE(
+        token,
+        JWT_SECRET_KEY,
+        "invalidPrivateKey",
+        {}
+    );
     expect(__).toBeNull();
     expect(invalidPrivateKey).not.toBeNull();
 });
@@ -149,4 +162,26 @@ test("Deal with expired JWE verification", async function () {
     expect(verifyJWEError).not.toBeNull();
     expect(verifyJWEError.toString()).toBe("TokenExpiredError: jwt expired");
     expect(nullPayload).toBeNull();
+});
+
+test("Invalid payload to sign", async function () {
+    const [[josePublicKeyPEM, josePrivateKeyPEM]] = await exportJoseKeyPair();
+    const [[josePublicKey, josePrivateKey]] = await importJoseKeyPair(
+        josePublicKeyPEM,
+        josePrivateKeyPEM
+    );
+    const payload = undefined;
+    const [jwe, forgeJWEError] = await forgeJWE(
+        payload,
+        JWT_SECRET_KEY,
+        josePublicKey,
+        {
+            issuer,
+            audience,
+            expiresIn: 0,
+        }
+    );
+    expect(jwe).toBeNull();
+    expect(forgeJWEError).not.toBeNull();
+    expect(forgeJWEError.toString()).toBe("Error: payload is required");
 });
