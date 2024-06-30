@@ -221,3 +221,32 @@ export async function verifyJWE(
         return [null, e];
     }
 }
+
+export interface SecurityContext {
+    jwtSecretKey: string;
+    josePublicKey: KeyLike | Uint8Array;
+    josePrivateKey: KeyLike | Uint8Array;
+    issuer: string;
+}
+
+export async function securityContext(
+    JWT_SECRET_KEY: string,
+    JOSE_PUBLIC_KEY: string,
+    JOSE_PRIVATE_KEY: string,
+    ISSUER: string
+): Promise<[null | SecurityContext, null | unknown]> {
+    const [[josePublicKey, josePrivateKey], importJoseKeyPairError] =
+        await importJoseKeyPair(JOSE_PUBLIC_KEY, JOSE_PRIVATE_KEY);
+    if (null !== importJoseKeyPairError) return [null, importJoseKeyPairError];
+    if (null === josePublicKey || null === josePrivateKey)
+        return [null, new Error("Unreachable")];
+    return [
+        {
+            jwtSecretKey: JWT_SECRET_KEY,
+            josePublicKey,
+            josePrivateKey,
+            issuer: ISSUER,
+        },
+        null,
+    ];
+}

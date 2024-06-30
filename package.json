@@ -2,10 +2,10 @@
     "name": "api-boilerplate",
     "version": "0.0.1",
     "description": "An expressJS template which uses TypeScript to build a REST API easily with security concernes builtin.",
-    "main": "dist/server.js",
+    "main": "build/server.js",
     "type": "module",
     "scripts": {
-        "dev": "tsc -p tsconfig.dev.json --watch",
+        "dev": "tsc -p tsconfig.json --watch",
         "build:dev": "tsc -p tsconfig.json",
         "build:prod": "tsc -p tsconfig.json && terser build/*.js --compress --mangle --output app.js",
         "test": "npm run build:dev && node --experimental-vm-modules node_modules/jest/bin/jest.js --collect-coverage",
