@@ -3,7 +3,7 @@ import {
     importJoseKeyPair,
     forgeJWE,
     verifyJWE,
-} from "../dist/src/security.js";
+} from "../build/security.js";
 
 const JWT_SECRET_KEY = "2dd084b1270ce3add8c6864022f0ff4d";
 const issuer = "ApiBoilerplate";
