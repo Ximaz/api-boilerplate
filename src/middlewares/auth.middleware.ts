@@ -15,10 +15,15 @@ export type AuthMiddlewareType = (
 export default function (securityContext: SecurityContext) {
     return async function (req: Request, res: Response, next: NextFunction) {
         const authorization = req.headers["authorization"];
-        if (undefined === authorization) return res.status(403).json(null);
+        if (undefined === authorization)
+            return res
+                .status(401)
+                .json({ error: "Missing 'Authorization' HTTP header." });
         const jweMatch = /^Bearer (.*)$/.exec(authorization);
         if (null === jweMatch || 2 !== jweMatch.length)
-            return res.status(403).json(null);
+            return res
+                .status(401)
+                .json({ error: "Invalid 'Authorization' HTTP header." });
         const jwe = jweMatch[1];
         const [payload, error] = await verifyJWE(
             jwe,
@@ -29,10 +34,10 @@ export default function (securityContext: SecurityContext) {
                 checkExpiration: true,
             }
         );
-        console.log(payload, error);
-
-        if (null !== error) return res.status(500).json(null);
-        if (null === payload) return res.status(403).json(null);
+        if (null !== error)
+            return res.status(500).json({ error: (error as Error).toString() });
+        if (null === payload) throw new Error("Unreachable");
+        Object.assign(req, { jwt: payload });
         return next();
     };
 }

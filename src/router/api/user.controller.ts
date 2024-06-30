@@ -11,7 +11,7 @@ export default function (
 
     router.get("/", authMiddleware, function (req: AuthenticatedRequest, res: Response) {
         const jwt = req.jwt as JwtPayload;
-        console.log(jwt);
+        console.log(jwt["username"], jwt["id"]);
         return res.json([1, 2, 3]);
     });
 

@@ -1,12 +1,24 @@
-import { Response, Router } from "express";
+import { Request, Response, Router } from "express";
 import { SecurityContext, forgeJWE } from "../../security.js";
 
 export default function (securityContext: SecurityContext) {
     const router = Router();
 
-    router.get("/", async function (_, res: Response) {
+    router.post("/", async function (req: Request, res: Response) {
+        const username = req.body.username
+            ? (req.body.username as string)?.trim()
+            : "";
+        const password = (req.body.password as string) || "";
+
+        if (0 === username.length || 0 === password.length)
+            return res.status(400).json({ error: "Missing fields." });
+
+        const userId = 1; /* await getUserId(username, password); */
+        if (null === userId)
+            return res.status(401).json({ error: "Invalid credentials." });
+
         const [jwe, error] = await forgeJWE(
-            { username: "ximaz" },
+            { username, id: userId },
             securityContext.jwtSecretKey,
             securityContext.josePublicKey,
             { issuer: securityContext.issuer }

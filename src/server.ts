@@ -24,6 +24,7 @@ import authController from "./router/api/auth.controller.js";
     if (null !== securityError) throw securityError;
     if (null === security) throw new Error("Unreachable");
 
+    server.use(express.json());
     server.use("/api/auth", authController(security));
     server.use("/api/users", userController(security));
 
